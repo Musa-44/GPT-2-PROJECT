@@ -10,42 +10,26 @@ interface Chat {
 
 export default function Home() {
   const [message, setMessage] = React.useState("");
-
   const [chat, setChat] = React.useState<Chat[]>([]);
-
   const llm = useLLM();
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    e.stopPropagation();
+    if (!message.trim()) return;
 
-    setChat((chat) => [
-      ...chat,
-      {
-        role: "user",
-        message: message,
-      },
-    ]);
+    setChat((chat) => [...chat, { role: "user", message }]);
+    setMessage("");
 
     llm.mutate(
       { prompt: message },
       {
         onSuccess: (data) => {
-          setChat((chat) => [
-            ...chat,
-            {
-              role: "llm",
-              message: data.message,
-            },
-          ]);
+          setChat((chat) => [...chat, { role: "llm", message: data.message }]);
         },
         onError: () => {
           setChat((chat) => [
             ...chat,
-            {
-              role: "llm",
-              message: "Something went wrong",
-            },
+            { role: "llm", message: "Something went wrong. Please try again." },
           ]);
         },
       }
@@ -53,49 +37,60 @@ export default function Home() {
   };
 
   return (
-    <div className="size-full bg-gradient-to-r from-indigo-200 to-yellow-100">
-      <main className="min-h-screen flex flex-col max-w-7xl mx-auto py-10 px-4 gap-y-4 ">
-        <section className="flex-1  p-4 ">
-          <div className="max-h-[80vh] font-mono overflow-y-auto p-4 space-y-4">
-            {chat.map(({ message, role }: Chat, index) =>
-              role === "user" ? (
-                <div key={index} className="flex w-full justify-end ">
-                  <div className="bg-slate-100 rounded-xl">
-                    <p className=" w-fit border py-2 px-4 rounded-lg shadow-lg border-slate-100 min-w-24 text-center bg-gradient-to-r from-pink-500 to-yellow-500 bg-clip-text text-transparent">
-                      {message}
-                    </p>
-                  </div>
-                </div>
-              ) : role === "llm" ? (
-                <div key={index} className="flex w-full justify-start">
-                  <div className="bg-slate-100 rounded-xl">
-                    <p className="w-fit border py-2 px-4 rounded-lg shadow-lg border-slate-100 min-w-24  bg-gradient-to-r from-rose-700 to-pink-600 bg-clip-text text-transparent">
-                      {message}
-                    </p>
-                  </div>
-                </div>
-              ) : null
-            )}
-          </div>
-        </section>
-        <section className="font-mono">
-          <form className="flex items-center justify-center gap-y-4 ">
-            <input
-              placeholder="What is the color of the sky?"
-              className="p-1 bg-gradient-to-b from-rose-400 to-pink-600 text-white md:p-2 w-6/12 focus:border-r-0 active:border-r-0 outline-0 focus:outline-0 active:outline-0 border border-r-0 rounded-l-md  text-black"
-              onChange={(e) => setMessage(e.target.value)}
-            />
-            <button
-              onClick={onSubmit}
-              className="rounded-r p-1 md:p-2  cursor-pointer hover:bg-sky-600 hover:text-white hover:bg-gradient-to-b from-rose-400 to-pink-600 group"
+    <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 text-gray-800">
+      <main className="max-w-4xl mx-auto py-12 px-6 flex flex-col gap-6">
+        <h1 className="text-3xl font-semibold text-center mb-4">AI Chat Assistant</h1>
+
+        <div className="flex flex-col gap-4 overflow-y-auto max-h-[70vh] pr-2 custom-scrollbar">
+          {chat.map(({ message, role }, index) => (
+            <div
+              key={index}
+              className={flex ${role === "user" ? "justify-end" : "justify-start"}}
             >
-              <span className="text-xs bg-gradient-to-b from-rose-700 to-pink-800 bg-clip-text text-transparent group-hover:text-white">
-                Prompt
-              </span>
-            </button>
-          </form>
-        </section>
+              <div
+                className={`px-5 py-3 rounded-xl shadow-md max-w-[80%] text-sm transition-all ${
+                  role === "user"
+                    ? "bg-blue-600 text-white rounded-br-none"
+                    : "bg-white text-gray-800 border border-gray-200 rounded-bl-none"
+                }`}
+              >
+                {message}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <form
+          onSubmit={onSubmit}
+          className="flex gap-3 items-center bg-white shadow-lg p-4 rounded-xl border border-gray-200"
+        >
+          <input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type your question..."
+            className="flex-1 px-4 py-2 border rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
+          />
+          <button
+            type="submit"
+            className="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all"
+          >
+            Send
+          </button>
+        </form>
       </main>
+
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(0, 0, 0, 0.1);
+          border-radius: 3px;
+        }
+      `}</style>
     </div>
   );
 }
